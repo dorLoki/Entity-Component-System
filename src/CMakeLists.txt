@@ -17,5 +17,8 @@ else()
     FetchContent_MakeAvailable(fmt)
 endif()
 
-add_executable(${CMAKE_PROJECT_NAME} "v1/main.cpp")
-target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE fmt::fmt)
+add_executable(${CMAKE_PROJECT_NAME}_v1 "v1/main.cpp")
+add_executable(${CMAKE_PROJECT_NAME}_v2 "v2/main.cpp")
+target_link_libraries(${CMAKE_PROJECT_NAME}_v1 PRIVATE fmt::fmt)
+target_link_libraries(${CMAKE_PROJECT_NAME}_v2 PRIVATE fmt::fmt)
+
