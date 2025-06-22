@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  gtest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Configure
+        run: cmake --preset "workflow-gtest"
+
+      - name: Build
+        run: cmake --build --preset "workflow-gtest"
+
+      - name: Run tests
+        run: ctest --preset "workflow-gtest"
+
+  clang-format-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install clang-format
+        run: sudo apt-get install -y clang-format
+
+      - name: Run clang-format
+        run: |
+          find . -regex '.*\.\(cpp\|hpp\)' -exec clang-format -i {} \;
+
+      - name: Check for formatting changes
+        run: |
+          if ! git diff --exit-code; then
+            echo "::error::Code is not properly formatted. Please run clang-format."
+            exit 1
+          fi
