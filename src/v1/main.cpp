@@ -3,7 +3,7 @@
 #include <iostream>
 #include <random>
 
-#include "v1/ecs.hpp"
+#include "ecs.hpp"
 
 struct Player {};
 struct Enemy {};
@@ -55,7 +55,7 @@ void mainEcs() {
     for (size_t i = 0; i < entity_count; i++) {
         // std::cout << i << '\t' << coordinates[i].x << ' ' << coordinates[i].y << '\n';
     }
-    std::cout << "tick time: "
+    std::cout << "tick time ecs: "
               << std::chrono::duration_cast<std::chrono::microseconds>(time).count() << std::endl;
 }
 
@@ -97,7 +97,7 @@ void mainOop() {
     for (size_t i = 0; i < entity_count; i++) {
         // entity_list[i].toString(static_cast<int>(i));
     }
-    std::cout << "tick time: "
+    std::cout << "tick time oop: "
               << std::chrono::duration_cast<std::chrono::microseconds>(time).count() << std::endl;
 }
 
