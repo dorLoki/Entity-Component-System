@@ -22,7 +22,7 @@ endif()
 
 add_executable(
   Testing
-  test.cpp
+  v3/ecs_test.cpp
 )
 
 target_link_libraries(Testing PRIVATE GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main)
