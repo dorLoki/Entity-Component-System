@@ -20,8 +20,10 @@ endif()
 add_executable(${CMAKE_PROJECT_NAME}_v1 "v1/main.cpp")
 add_executable(${CMAKE_PROJECT_NAME}_v2 "v2/main.cpp")
 add_executable(${CMAKE_PROJECT_NAME}_v3 "v3/main.cpp")
+add_executable(${CMAKE_PROJECT_NAME}_v4 "v4/main.cpp")
 
 target_link_libraries(${CMAKE_PROJECT_NAME}_v1 PRIVATE fmt::fmt)
 target_link_libraries(${CMAKE_PROJECT_NAME}_v2 PRIVATE fmt::fmt)
 target_link_libraries(${CMAKE_PROJECT_NAME}_v3 PRIVATE fmt::fmt)
+target_link_libraries(${CMAKE_PROJECT_NAME}_v4 PRIVATE fmt::fmt)
 

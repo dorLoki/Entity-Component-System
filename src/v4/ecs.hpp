@@ -130,7 +130,7 @@ class World {
             throw std::runtime_error("Entity already has one of the given components.");
 
         // new signature
-        ArchetypeSignature newSig = oldArch->signature;
+        ArchetypeSignature newSig = arch->signature;
         newSig.insert(newSig.end(), query.begin(), query.end());
         std::sort(newSig.begin(), newSig.end());
 
@@ -142,7 +142,7 @@ class World {
         // copy old data
         for (auto componentId : arch->signature) {
             auto* source = arch->componentData.at(componentId).get();
-            auto* target = newArch->getOrCreateComponentArray()
+            // auto* target = newArch->getOrCreateComponentArray();
         }
 
         // todo
