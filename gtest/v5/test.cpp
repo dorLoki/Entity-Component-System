@@ -26,3 +26,21 @@ TEST(V5, testComponentType) {
     EXPECT_TRUE((std::is_same_v<MyECS::ComponentType<0>, Position>));
     EXPECT_TRUE((std::is_same_v<MyECS::ComponentType<1>, Velocity>));
 }
+
+TEST(V5, testMatchArchetypeSignature) {
+    ecs::detail::ArchetypeSignature sig = 0b1;
+    ecs::detail::ArchetypeSignature query = 0b1;
+    EXPECT_TRUE(ecs::detail::matchArchetypeSignatures(sig, query));
+
+    sig = 0b11;
+    query = 0b01;
+    EXPECT_TRUE(ecs::detail::matchArchetypeSignatures(sig, query));
+
+    sig = 0b0;
+    query = 0b1;
+    EXPECT_FALSE(ecs::detail::matchArchetypeSignatures(sig, query));
+
+    sig = 0b10;
+    query = 0b01;
+    EXPECT_FALSE(ecs::detail::matchArchetypeSignatures(sig, query));
+}

@@ -1,9 +1,13 @@
 #pragma once
 #include <tuple>
 
-// Main ECS template.
-// Accepts a user-defined configuration that provides a compile-time ComponentList.
 namespace ecs {
+
+// define types for clearer parameter
+using EntityId = unsigned int;
+
+// ComponentManager template.
+// Accepts a user-defined configuration that provides a compile-time ComponentList.
 template <typename UserConfig>
 struct ComponentManager {
     // This is the user-defined list of all component types.
@@ -46,5 +50,26 @@ struct ComponentManager {
     // E.g.: ComponentType<1> gives you the second component type in ComponentList.
     template <std::size_t ID>
     using ComponentType = std::tuple_element_t<ID, ComponentList>;
+};
+
+namespace detail {
+// define types for clearer parameter
+using ComponentId = size_t;
+using ComponentMask = size_t;
+using ArchetypeSignature = size_t;
+
+// check if the signature has all components of the query
+inline bool matchArchetypeSignatures(const ArchetypeSignature sig, const ArchetypeSignature query) {
+    return (sig & query) == query;
+}
+
+}  // namespace detail
+template <typename ComponentManager>
+class World {
+   private:
+    EntityId generateEntityId() {
+        static int nextEntityId = 0;
+        return nextEntityId++;
+    }
 };
 }  // namespace ecs
