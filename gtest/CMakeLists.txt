@@ -24,6 +24,7 @@ add_executable(
   Testing
   v3/ecs_test.cpp
   v4/test.cpp
+  v5/test.cpp
 )
 
 target_link_libraries(Testing PRIVATE GTest::gtest GTest::gtest_main GTest::gmock GTest::gmock_main)
