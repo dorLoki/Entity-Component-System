@@ -56,3 +56,13 @@ TEST(V5, testCreateArchetype) {
     world.createEntity<Position, Velocity>(Position{5, 6}, Velocity{7, 8});
     world.createEntity<Position, Velocity>(Position{10, 11}, Velocity{12, 13});
 }
+
+TEST(V5, testApply) {
+    ecs::World<MyECS> world;
+    auto e1 = world.createEntity<Position>(Position{1, 2});
+    world.apply<Position>(e1, [](Position& pos) { pos.x = 100; });
+    world.apply<Position>(e1, [](Position& pos) {
+        EXPECT_EQ(100, pos.x);
+        EXPECT_EQ(2, pos.y);
+    });
+}

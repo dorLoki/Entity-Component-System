@@ -149,6 +149,24 @@ class World {
         return id;
     }
 
+    template <typename... Components, typename Func>
+    void apply(EntityId entityId, Func func) {
+        auto it = entityLocationMap.find(entityId);
+        if (it == entityLocationMap.end()) throw std::out_of_range("Entity not found.");
+        detail::Archetype* arch = it->second.archetype;
+
+        detail::ArchetypeSignature query =
+            (ComponentManager::template GetComponentMask<std::decay_t<Components>>() | ...);
+
+        if (!detail::matchArchetypeSignatures(arch->signature, query))
+            throw std::runtime_error("Entity does not contain the given Component.");
+
+        size_t index = it->second.indexInArchetype;
+
+        func((arch->getOrCreateComponentArray<std::decay_t<Components>, ComponentManager>()->get(
+            index))...);
+    }
+
    private:
     std::vector<detail::Archetype> archetypes{};
     std::unordered_map<EntityId, detail::EntityLocation> entityLocationMap{};
