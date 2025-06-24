@@ -291,6 +291,38 @@ class World {
         oldArch->entities.pop_back();
     }
 
+    // Delete the given entity.
+    void destroyEntity(EntityId entityId) {
+        // Look up the entity.
+        auto it = entityLocationMap.find(entityId);
+        if (it == entityLocationMap.end()) throw std::out_of_range("Entity not found.");
+
+        detail::Archetype* archeType = getOrCreateArchetype(it->second.signature);
+        size_t index = it->second.indexInArchetype;
+        size_t lastIndex = archeType->entities.size() - 1;
+
+        // Delete all components of the entity.
+        for (auto& i : archeType->componentData) {
+            // Intern: Move component data of last index with the to be deleted entity.
+            if (index != lastIndex) i.second->moveElement(lastIndex, index);
+            // Then delete last component through pop_back.
+            i.second->removeLast();
+        }
+
+        // Delete the entity from the archetype-entities-list
+        if (index != lastIndex) {
+            // Intern: Swap the EntityIds of the to be deleted entity and the last entity.
+            std::swap(archeType->entities[lastIndex], archeType->entities[index]);
+            EntityId swapId = archeType->entities[index];
+            // Update the location of the swapped entity.
+            entityLocationMap[swapId] = detail::EntityLocation{archeType->signature, index};
+        }
+        archeType->entities.pop_back();
+
+        // Delete the location of the entity.
+        entityLocationMap.erase(entityId);
+    }
+
    private:
     // All archetypes in the world
     std::vector<detail::Archetype> archetypes{};

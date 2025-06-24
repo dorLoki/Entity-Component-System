@@ -202,3 +202,36 @@ TEST(V5, testAddComponentDeleteOldData) {
         EXPECT_EQ(15, vel.dy);
     });
 }
+
+TEST(V5, testRemoveEntity) {
+    ecs::World<MyECS> world;
+    auto e1 = world.createEntity<Position>(Position{1, 1});
+    auto e2 = world.createEntity<Position>(Position{2, 2});
+    auto e3 = world.createEntity<Position>(Position{3, 3});
+    auto e4 = world.createEntity<Position>(Position{4, 4});
+    auto e5 = world.createEntity<Position>(Position{5, 5});
+
+    world.destroyEntity(e3);
+
+    world.apply<Position>(e1, [](Position& pos) {
+        EXPECT_EQ(1, pos.x);
+        EXPECT_EQ(1, pos.y);
+    });
+
+    world.apply<Position>(e2, [](Position& pos) {
+        EXPECT_EQ(2, pos.x);
+        EXPECT_EQ(2, pos.y);
+    });
+
+    world.apply<Position>(e4, [](Position& pos) {
+        EXPECT_EQ(4, pos.x);
+        EXPECT_EQ(4, pos.y);
+    });
+
+    world.apply<Position>(e5, [](Position& pos) {
+        EXPECT_EQ(5, pos.x);
+        EXPECT_EQ(5, pos.y);
+    });
+
+    EXPECT_THROW({ world.destroyEntity(e3); }, std::out_of_range);
+}
