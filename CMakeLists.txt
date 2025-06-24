@@ -7,7 +7,7 @@ if (POLICY CMP0141)
 endif()
 
 # Please change me
-project (MyProject)
+project (EntityComponentSystem)
 
 include(GNUInstallDirs)
 
@@ -21,3 +21,4 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #else()
   add_subdirectory(src)
 #endif()
+add_subdirectory(example)
