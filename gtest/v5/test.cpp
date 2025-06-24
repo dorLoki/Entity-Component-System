@@ -66,3 +66,40 @@ TEST(V5, testApply) {
         EXPECT_EQ(2, pos.y);
     });
 }
+
+TEST(V5, testApplyFail) {
+    EXPECT_THROW(
+        {
+            ecs::World<MyECS> world;
+            auto id = world.createEntity<Velocity>(Velocity{0, 0});
+            world.apply<Position>(id, [](Position& pos) { pos.x = 100; });
+        },
+        std::runtime_error);
+}
+
+TEST(V5, testApplyFailOutOfBounds) {
+    EXPECT_THROW(
+        {
+            ecs::World<MyECS> world;
+            world.apply<Position>(1, [](Position& pos) { pos.x = 100; });
+        },
+        std::out_of_range);
+}
+
+TEST(V5, testForeach) {
+    ecs::World<MyECS> world;
+    auto e1 = world.createEntity<Position>(Position{1, 2});
+    auto e2 = world.createEntity<Position>(Position{3, 4});
+    world.forEach<Position>([](Position& pos) { pos.x = 100; });
+    world.apply<Position>(e1, [](Position& pos) { EXPECT_EQ(100, pos.x); });
+    world.apply<Position>(e2, [](Position& pos) { EXPECT_EQ(100, pos.x); });
+}
+
+TEST(V5, testForeachMultipleArches) {
+    ecs::World<MyECS> world;
+    auto e1 = world.createEntity<Position>(Position{11, 22});
+    auto e2 = world.createEntity<Position, Velocity>(Position{33, 44}, Velocity{55, 66});
+    world.forEach<Position>([](Position& pos) { pos.x = 100; });
+    world.apply<Position>(e1, [](Position& pos) { EXPECT_EQ(100, pos.x); });
+    world.apply<Position>(e2, [](Position& pos) { EXPECT_EQ(100, pos.x); });
+}

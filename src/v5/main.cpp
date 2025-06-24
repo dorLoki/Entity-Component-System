@@ -1,22 +1,100 @@
+#include <array>
+#include <chrono>
+#include <iostream>
+#include <random>
+
 #include "ecs.hpp"
 
-struct Position {};
-struct Velocity {};
-struct Health {};
-
-struct MyECSConfig {
-    using ComponentList = std::tuple<Position, Velocity>;
+struct Coordinates {
+    double x, y;
 };
 
-int main() {
+struct Velocity {
+    double xVel, yVel;
+};
+
+struct MyECSConfig {
+    using ComponentList = std::tuple<Coordinates, Velocity>;
+};
+
+double getRandom() { return (static_cast<double>(rand() % 1000 + 1)) / 100.0; }
+
+const size_t entity_count = 1000;
+const int tick_amount = 1000;
+
+void mainEcs() {
     using MyECS = ecs::ComponentManager<MyECSConfig>;
+    // random for value generation
+    std::random_device rd;
+    std::mt19937 rng(rd());
+    ecs::World<MyECS> world;
 
-    static_assert(MyECS::GetComponentMask<Velocity>() == 0b10);
-    static_assert(std::is_same_v<MyECS::ComponentType<0>, Position>);
-    static_assert(std::is_same_v<MyECS::ComponentType<1>, Velocity>);
+    // init entity list
+    for (size_t i = 0; i < entity_count; i++) {
+        world.createEntity<Coordinates, Velocity>(Coordinates{getRandom(), getRandom()},
+                                                  Velocity{getRandom(), getRandom()});
+    }
 
-    auto i = MyECS::ComponentType<1>();
-    auto j = MyECS::GetComponentID<Position>();
+    // tick n times and mess time
+    auto startTime = std::chrono::high_resolution_clock::now();
+    for (size_t i = 0; i < tick_amount; i++) {
+        world.forEach<Coordinates, Velocity>([](Coordinates& coords, Velocity& vel) {
+            coords.x += vel.xVel;
+            coords.y += vel.yVel;
+        });
+    }
+    auto endTime = std::chrono::high_resolution_clock::now();
+    auto time = endTime - startTime;
+    // world.forEach<Coordinates, Velocity>([](Coordinates& coords, Velocity& vel) {
+    //     std::cout << coords.x << ",\t" << coords.y << '\n';
+    // });
 
+    std::cout << "tick time ecs: "
+              << std::chrono::duration_cast<std::chrono::microseconds>(time).count() << std::endl;
+}
+
+class PlayerOOP {
+   public:
+    PlayerOOP() {
+        this->x = getRandom();
+        this->y = getRandom();
+        this->xVel = getRandom();
+        this->yVel = getRandom();
+    };
+    ~PlayerOOP() = default;
+    void move() {
+        x += xVel;
+        y += yVel;
+    }
+    void toString(int i) { std::cout << i << '\t' << x << ' ' << y << '\n'; }
+
+   private:
+    double x, y;
+    double xVel, yVel;
+};
+
+void mainOop() {
+    std::array<PlayerOOP, entity_count> entity_list{};
+
+    auto startTime = std::chrono::high_resolution_clock::now();
+    // tick 1000 times
+    for (size_t i = 0; i < tick_amount; i++) {
+        // system
+        for (size_t i = 0; i < entity_count; i++) {
+            entity_list[i].move();
+        }
+    }
+    auto endTime = std::chrono::high_resolution_clock::now();
+    auto time = endTime - startTime;
+    for (size_t i = 0; i < entity_count; i++) {
+        // entity_list[i].toString(static_cast<int>(i));
+    }
+    std::cout << "tick time oop: "
+              << std::chrono::duration_cast<std::chrono::microseconds>(time).count() << std::endl;
+}
+
+int main() {
+    mainEcs();
+    mainOop();
     return 0;
 }

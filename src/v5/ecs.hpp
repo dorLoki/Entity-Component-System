@@ -123,7 +123,7 @@ struct Archetype {
 };
 
 struct EntityLocation {
-    Archetype* archetype;
+    detail::ArchetypeSignature signature;
     size_t indexInArchetype;
 };
 }  // namespace detail
@@ -166,6 +166,26 @@ class World {
 
         func((arch->getOrCreateComponentArray<std::decay_t<Components>, ComponentManager>()->get(
             index))...);
+    }
+
+    template <typename... Components, typename Func>
+    void forEach(Func func) {
+        detail::ArchetypeSignature query =
+            (ComponentManager::template GetComponentMask<std::decay_t<Components>>() | ...);
+
+        for (auto& arch : archetypes) {
+            if (!detail::matchArchetypeSignatures(arch.signature, query)) continue;
+
+            // Caches the component arrays once
+            auto comps = std::make_tuple(
+                arch.getOrCreateComponentArray<std::decay_t<Components>, ComponentManager>()...);
+
+            size_t count = arch.entities.size();
+
+            for (size_t i = 0; i < count; ++i) {
+                std::apply([&](auto*... arrays) { func((arrays->get(i))...); }, comps);
+            }
+        }
     }
 
    private:
