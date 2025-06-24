@@ -103,3 +103,102 @@ TEST(V5, testForeachMultipleArches) {
     world.apply<Position>(e1, [](Position& pos) { EXPECT_EQ(100, pos.x); });
     world.apply<Position>(e2, [](Position& pos) { EXPECT_EQ(100, pos.x); });
 }
+
+TEST(V5, testAddComponent) {
+    ecs::World<MyECS> world;
+    auto e1 = world.createEntity<Position>(Position{11, 22});
+    auto e2 = world.createEntity<Position, Velocity>(Position{33, 44}, Velocity{55, 66});
+    world.addComponent<Position, Velocity>(e1, Velocity{77, 88});
+
+    world.apply<Position, Velocity>(e1, [](Position& pos, Velocity& vel) {
+        EXPECT_EQ(11, pos.x);
+        EXPECT_EQ(22, pos.y);
+        EXPECT_EQ(77, vel.dx);
+        EXPECT_EQ(88, vel.dy);
+    });
+    world.apply<Position, Velocity>(e2, [](Position& pos, Velocity& vel) {
+        EXPECT_EQ(33, pos.x);
+        EXPECT_EQ(44, pos.y);
+        EXPECT_EQ(55, vel.dx);
+        EXPECT_EQ(66, vel.dy);
+    });
+}
+
+TEST(V5, testAddComponentDeleteOldData) {
+    ecs::World<MyECS> world;
+    auto e1 = world.createEntity<Position>(Position{1, 1});
+    auto e2 = world.createEntity<Position>(Position{2, 2});
+    auto e3 = world.createEntity<Position>(Position{3, 3});
+    auto e4 = world.createEntity<Position>(Position{4, 4});
+    auto e5 = world.createEntity<Position>(Position{5, 5});
+
+    auto e6 = world.createEntity<Position, Velocity>(Position{6, 6}, Velocity{7, 7});
+    auto e7 = world.createEntity<Position, Velocity>(Position{8, 8}, Velocity{9, 9});
+    auto e8 = world.createEntity<Position, Velocity>(Position{10, 10}, Velocity{11, 11});
+    auto e9 = world.createEntity<Position, Velocity>(Position{12, 12}, Velocity{13, 13});
+    auto e10 = world.createEntity<Position, Velocity>(Position{14, 14}, Velocity{15, 15});
+
+    world.addComponent<Position, Velocity>(e3, Velocity{16, 16});
+
+    world.apply<Position>(e1, [](Position& pos) {
+        EXPECT_EQ(1, pos.x);
+        EXPECT_EQ(1, pos.y);
+    });
+
+    world.apply<Position>(e2, [](Position& pos) {
+        EXPECT_EQ(2, pos.x);
+        EXPECT_EQ(2, pos.y);
+    });
+
+    world.apply<Position, Velocity>(e3, [](Position& pos, Velocity& vel) {
+        EXPECT_EQ(3, pos.x);
+        EXPECT_EQ(3, pos.y);
+        EXPECT_EQ(16, vel.dx);
+        EXPECT_EQ(16, vel.dy);
+    });
+
+    world.apply<Position>(e4, [](Position& pos) {
+        EXPECT_EQ(4, pos.x);
+        EXPECT_EQ(4, pos.y);
+    });
+
+    world.apply<Position>(e5, [](Position& pos) {
+        EXPECT_EQ(5, pos.x);
+        EXPECT_EQ(5, pos.y);
+    });
+
+    world.apply<Position, Velocity>(e6, [](Position& pos, Velocity& vel) {
+        EXPECT_EQ(6, pos.x);
+        EXPECT_EQ(6, pos.y);
+        EXPECT_EQ(7, vel.dx);
+        EXPECT_EQ(7, vel.dy);
+    });
+
+    world.apply<Position, Velocity>(e7, [](Position& pos, Velocity& vel) {
+        EXPECT_EQ(8, pos.x);
+        EXPECT_EQ(8, pos.y);
+        EXPECT_EQ(9, vel.dx);
+        EXPECT_EQ(9, vel.dy);
+    });
+
+    world.apply<Position, Velocity>(e8, [](Position& pos, Velocity& vel) {
+        EXPECT_EQ(10, pos.x);
+        EXPECT_EQ(10, pos.y);
+        EXPECT_EQ(11, vel.dx);
+        EXPECT_EQ(11, vel.dy);
+    });
+
+    world.apply<Position, Velocity>(e9, [](Position& pos, Velocity& vel) {
+        EXPECT_EQ(12, pos.x);
+        EXPECT_EQ(12, pos.y);
+        EXPECT_EQ(13, vel.dx);
+        EXPECT_EQ(13, vel.dy);
+    });
+
+    world.apply<Position, Velocity>(e10, [](Position& pos, Velocity& vel) {
+        EXPECT_EQ(14, pos.x);
+        EXPECT_EQ(14, pos.y);
+        EXPECT_EQ(15, vel.dx);
+        EXPECT_EQ(15, vel.dy);
+    });
+}

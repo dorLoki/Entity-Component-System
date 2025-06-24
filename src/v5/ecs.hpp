@@ -211,6 +211,86 @@ class World {
         }
     }
 
+    // check if type t is in a list of types
+    template <typename T, typename... Ts>
+    constexpr bool contains_type() {
+        return (std::is_same_v<T, Ts> || ...);
+    }
+
+    // Add a Component to an Entity.
+    // Requires Type list of all Components the Entity has plus the new Component.
+    // Intern:
+    // 1. Adds the Entity to an archetype of the given Type list (components)
+    // 2. Copies the data from the old archetype to the new one.
+    // 3. Adds the data from the newComponents to the new archetype.
+    // 4. To remove the entity from the old list, the entity is swapped with the last entity from
+    // the entities list. Same for the Components. Finally pop last element to remove effectively
+    // the element. -> Remove is O(1)
+    template <typename... AllComponents, typename... NewComponents>
+    void addComponent(EntityId entityId, NewComponents&&... newComponents) {
+        static_assert(sizeof...(NewComponents) <= sizeof...(AllComponents),
+                      "You must pass exactly the new components for the added types");
+
+        // Look up the entity
+        auto it = entityLocationMap.find(entityId);
+        if (it == entityLocationMap.end()) throw std::out_of_range("Entity not found.");
+
+        // Temp save old meta data
+        detail::Archetype* oldArch = getOrCreateArchetype(it->second.signature);
+        size_t oldIndex = it->second.indexInArchetype;
+
+        size_t lastIndex = oldArch->entities.size() - 1;
+
+        // Build the new signature from all components
+        detail::ArchetypeSignature newSignature =
+            (ComponentManager::template GetComponentMask<std::decay_t<AllComponents>>() | ...);
+
+        // Early-out: no change
+        if (oldArch->signature == newSignature) return;
+
+        detail::Archetype* newArch = getOrCreateArchetype(newSignature);
+        newArch->entities.push_back(entityId);
+        size_t newIndex = newArch->entities.size() - 1;
+
+        // function to move existing components (not part of newComponents) from old to new
+        auto moveExisting = [&]<typename T>() {
+            if (!contains_type<T, NewComponents...>()) {
+                detail::ComponentArray<T>* src =
+                    oldArch->getOrCreateComponentArray<T, ComponentManager>();
+                detail::ComponentArray<T>* dst =
+                    newArch->getOrCreateComponentArray<T, ComponentManager>();
+                dst->copyElementFrom(src, oldIndex);
+
+                // remove old data
+                // if the component is not the last index, swap data with last index
+                if (oldIndex != lastIndex) src->moveElement(lastIndex, oldIndex);
+                // remove component data of last index
+                src->removeLast();
+            }
+        };
+
+        // execute move fuction for each Component
+        (moveExisting.template operator()<AllComponents>(), ...);
+
+        // insert new component data into each table
+        (newArch->getOrCreateComponentArray<std::decay_t<NewComponents>, ComponentManager>()
+             ->push_back(std::forward<NewComponents>(newComponents)),
+         ...);
+
+        // update entity location
+        entityLocationMap[entityId] = {newSignature, newIndex};
+
+        // if the entity is not the last index, swap entityId with last index
+        if (oldIndex != lastIndex) {
+            std::swap(oldArch->entities[lastIndex], oldArch->entities[oldIndex]);
+            EntityId swapId = oldArch->entities[oldIndex];
+            // update
+            entityLocationMap[swapId] = detail::EntityLocation{oldArch->signature, oldIndex};
+        }
+        // remove entity from old arch
+        oldArch->entities.pop_back();
+    }
+
    private:
     // All archetypes in the world
     std::vector<detail::Archetype> archetypes{};
