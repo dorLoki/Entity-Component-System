@@ -145,7 +145,7 @@ class World {
              ->push_back(std::forward<Components>(components)),
          ...);
 
-        entityLocationMap[id] = {archetype, index};
+        entityLocationMap[id] = {archetype->signature, index};
         return id;
     }
 
@@ -153,7 +153,8 @@ class World {
     void apply(EntityId entityId, Func func) {
         auto it = entityLocationMap.find(entityId);
         if (it == entityLocationMap.end()) throw std::out_of_range("Entity not found.");
-        detail::Archetype* arch = it->second.archetype;
+        auto signature = it->second.signature;
+        detail::Archetype* arch = getOrCreateArchetype(signature);
 
         detail::ArchetypeSignature query =
             (ComponentManager::template GetComponentMask<std::decay_t<Components>>() | ...);
