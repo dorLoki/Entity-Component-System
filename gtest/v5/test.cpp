@@ -2,8 +2,12 @@
 
 #include "../../src/v5/ecs.hpp"
 
-struct Position {};
-struct Velocity {};
+struct Position {
+    int x, y;
+};
+struct Velocity {
+    int dx, dy;
+};
 struct Health {};
 
 struct MyECSConfig {
@@ -43,4 +47,12 @@ TEST(V5, testMatchArchetypeSignature) {
     sig = 0b10;
     query = 0b01;
     EXPECT_FALSE(ecs::detail::matchArchetypeSignatures(sig, query));
+}
+
+TEST(V5, testCreateArchetype) {
+    ecs::World<MyECS> world;
+    world.createEntity<Position>(Position{1, 2});
+    world.createEntity<Velocity>(Velocity{3, 4});
+    world.createEntity<Position, Velocity>(Position{5, 6}, Velocity{7, 8});
+    world.createEntity<Position, Velocity>(Position{10, 11}, Velocity{12, 13});
 }

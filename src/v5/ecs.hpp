@@ -1,5 +1,8 @@
 #pragma once
+#include <memory>
 #include <tuple>
+#include <unordered_map>
+#include <vector>
 
 namespace ecs {
 
@@ -62,14 +65,103 @@ using ArchetypeSignature = size_t;
 inline bool matchArchetypeSignatures(const ArchetypeSignature sig, const ArchetypeSignature query) {
     return (sig & query) == query;
 }
+struct IComponentArray {
+    virtual ~IComponentArray() = default;
+    virtual void copyElementFrom(IComponentArray* source, size_t sourceIndex) = 0;
+    virtual void moveElement(size_t fromIndex, size_t toIndex) = 0;
+    virtual void removeLast() = 0;
+};
+template <typename T>
+struct ComponentArray : IComponentArray {
+    std::vector<T> data;
 
+    void push_back(const T& value) { data.push_back(value); }
+
+    T& get(size_t index) { return data[index]; }
+
+    std::vector<T>& getVector() { return data; }
+
+    void copyElementFrom(IComponentArray* source, size_t sourceIndex) override {
+        auto* src = static_cast<ComponentArray<T>*>(source);
+        data.push_back(src->get(sourceIndex));
+    }
+
+    void moveElement(size_t fromIndex, size_t toIndex) override {
+        data[toIndex] = std::move(data[fromIndex]);
+    }
+
+    void removeLast() override { data.pop_back(); }
+};
+
+struct Archetype {
+    ArchetypeSignature signature;
+    std::vector<EntityId> entities;
+    std::unordered_map<ComponentId, std::unique_ptr<IComponentArray>> componentData;
+
+    Archetype() = default;
+    explicit Archetype(ArchetypeSignature sig) : signature(std::move(sig)) {}
+
+    // uncopyble, because componentData contains unique ptr
+    Archetype(const Archetype&) = delete;
+    Archetype& operator=(const Archetype&) = delete;
+    // movable
+    Archetype(Archetype&&) noexcept = default;
+    Archetype& operator=(Archetype&&) noexcept = default;
+
+    template <typename T, typename ComponentManager>
+    ComponentArray<T>* getOrCreateComponentArray() {
+        ComponentId id = ComponentManager::template GetComponentID<T>();
+        auto it = componentData.find(id);
+        if (it == componentData.end()) {
+            auto array = std::make_unique<ComponentArray<T>>();
+            ComponentArray<T>* ptr = array.get();
+            componentData[id] = std::move(array);
+            return ptr;
+        }
+        return static_cast<ComponentArray<T>*>(componentData[id].get());
+    }
+};
+
+struct EntityLocation {
+    Archetype* archetype;
+    size_t indexInArchetype;
+};
 }  // namespace detail
+
 template <typename ComponentManager>
 class World {
+   public:
+    template <typename... Components>
+    EntityId createEntity(Components&&... components) {
+        EntityId id = generateEntityId();
+        detail::ArchetypeSignature sig =
+            (ComponentManager::template GetComponentMask<std::decay_t<Components>>() | ...);
+
+        detail::Archetype* archetype = getOrCreateArchetype(sig);
+        archetype->entities.push_back(id);
+        size_t index = archetype->entities.size() - 1;
+
+        (archetype->getOrCreateComponentArray<std::decay_t<Components>, ComponentManager>()
+             ->push_back(std::forward<Components>(components)),
+         ...);
+
+        entityLocationMap[id] = {archetype, index};
+        return id;
+    }
+
    private:
+    std::vector<detail::Archetype> archetypes{};
+    std::unordered_map<EntityId, detail::EntityLocation> entityLocationMap{};
     EntityId generateEntityId() {
         static int nextEntityId = 0;
         return nextEntityId++;
+    }
+    detail::Archetype* getOrCreateArchetype(const detail::ArchetypeSignature& sig) {
+        for (auto& a : archetypes) {
+            if (a.signature == sig) return &a;
+        }
+        archetypes.push_back(detail::Archetype{sig});
+        return &archetypes.back();
     }
 };
 }  // namespace ecs
