@@ -4,6 +4,7 @@
 #include <imgui_impl_opengl3.h>
 
 #include <iostream>
+#include <string>
 
 #include "../../src/v5/ecs.hpp"
 
@@ -32,6 +33,39 @@ struct MyECSConfig {
 };
 
 using MyECS = ecs::ComponentManager<MyECSConfig>;
+
+template <typename CM, std::size_t I>
+void ShowComponentEntry(ecs::EntityId id) {
+    using T = typename CM::template ComponentType<I>;
+    if constexpr (std::is_same_v<T, Position>) {
+        ImGui::Text("Position");
+    } else if constexpr (std::is_same_v<T, Velocity>) {
+        ImGui::Text("Velocity");
+    } else if constexpr (std::is_same_v<T, Circle>) {
+        ImGui::Text("Circle");
+    } else if constexpr (std::is_same_v<T, Rectangle>) {
+        ImGui::Text("Rectangle");
+    } else if constexpr (std::is_same_v<T, Color>) {
+        ImGui::Text("Color");
+    } else {
+        ImGui::Text("Unknown component %zu", I);
+    }
+}
+
+template <typename CM>
+void ShowComponentsUI(ecs::EntityId id, std::size_t signature) {
+    using ComponentList = typename CM::ComponentList;
+    [&]<std::size_t... Is>(std::index_sequence<Is...>) {
+        (
+            [&id, signature]<typename T>() {
+                constexpr std::size_t CID = CM::template GetComponentID<T>();
+                if ((signature & (1 << CID)) != 0) {
+                    ShowComponentEntry<CM, CID>(id);
+                }
+            }.template operator()<std::tuple_element_t<Is, ComponentList>>(),
+            ...);
+    }(std::make_index_sequence<std::tuple_size_v<ComponentList>>{});
+}
 
 int main() {
     if (!glfwInit()) {
@@ -120,6 +154,18 @@ int main() {
                 ImVec2(pos.x, pos.y), ImVec2(pos.x + rect.length, pos.y + rect.width),
                 IM_COL32(color.r, color.g, color.b, color.a));
         });
+
+        ImGui::Begin("Entities");
+        world.forEachEntity([&](ecs::EntityId id, ecs::detail::EntityLocation location) {
+            // create tree node for entity
+            if (ImGui::TreeNode(("Entity " + std::to_string(id)).c_str())) {
+                auto signature = location.signature;
+                ShowComponentsUI<MyECS>(id, signature);
+                //  close tree node
+                ImGui::TreePop();
+            }
+        });
+        ImGui::End();
 
         ImGui::Render();
 

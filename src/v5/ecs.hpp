@@ -210,6 +210,14 @@ class World {
             }
         }
     }
+    template <typename Func>
+    void forEachEntity(Func func) {
+        for (auto entityLocation : entityLocationMap) {
+            auto id = entityLocation.first;
+            auto location = entityLocation.second;
+            func(id, location);
+        }
+    }
 
     // check if type t is in a list of types
     template <typename T, typename... Ts>
