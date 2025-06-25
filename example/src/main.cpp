@@ -19,8 +19,16 @@ struct Color {
     unsigned char r, g, b, a;
 };
 
+struct Rectangle {
+    float width, length;
+};
+
+struct Velocity {
+    float dx, dy;
+};
+
 struct MyECSConfig {
-    using ComponentList = std::tuple<Position, Circle, Color>;
+    using ComponentList = std::tuple<Position, Circle, Color, Rectangle, Velocity>;
 };
 
 using MyECS = ecs::ComponentManager<MyECSConfig>;
@@ -68,8 +76,13 @@ int main() {
                                                 Color{0, 255, 0, 255});
     world.createEntity<Position, Circle, Color>(Position{300.0f, 100.0f}, Circle{10.0f},
                                                 Color{0, 0, 255, 255});
-    world.createEntity<Position, Circle, Color>(Position{400.0f, 100.0f}, Circle{10.0f},
-                                                Color{255, 0, 255, 255});
+    world.createEntity<Position, Circle, Color, Velocity>(
+        Position{400.0f, 100.0f}, Circle{10.0f}, Color{255, 0, 255, 255}, Velocity{50.0f, 20.0f});
+    world.createEntity<Position, Rectangle, Color>(Position{300.0f, 200.0f},
+                                                   Rectangle{10.0f, 20.0f}, Color{0, 0, 255, 255});
+    size_t test = world.createEntity<Position, Rectangle, Color, Velocity>(
+        Position{300.0f, 300.0f}, Rectangle{10.0f, 20.0f}, Color{0, 0, 255, 255},
+        Velocity{70.0f, -20.0f});
 
     while (!glfwWindowShouldClose(window)) {
         double currentTime = glfwGetTime();
@@ -88,14 +101,25 @@ int main() {
                     1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
         ImGui::End();
 
+        // update movement
+        world.forEach<Position, Velocity>([&deltaTime](Position& pos, Velocity& vel) {
+            pos.x += vel.dx * deltaTime;
+            pos.y += vel.dy * deltaTime;
+        });
+
+        // draw circles
         world.forEach<Position, Circle, Color>([](Position& pos, Circle& circle, Color& color) {
             ImGui::GetBackgroundDrawList()->AddCircleFilled(
                 ImVec2(pos.x, pos.y), circle.radius, IM_COL32(color.r, color.g, color.b, color.a),
                 10);
         });
 
-        world.forEach<Position, Circle>(
-            [&](Position& pos, Circle&) { pos.x += 50.0f * deltaTime; });
+        // draw rectangle
+        world.forEach<Position, Rectangle, Color>([](Position& pos, Rectangle& rect, Color& color) {
+            ImGui::GetBackgroundDrawList()->AddRectFilled(
+                ImVec2(pos.x, pos.y), ImVec2(pos.x + rect.length, pos.y + rect.width),
+                IM_COL32(color.r, color.g, color.b, color.a));
+        });
 
         ImGui::Render();
 
