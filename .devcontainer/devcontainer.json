@@ -15,7 +15,7 @@
 	],
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	"features": {
-		"ghcr.io/devcontainers-contrib/features/ccache-asdf": "latest" // does not work on Apple Silicon (M1, M2)
+		"ghcr.io/devcontainers-extra/features/ccache-asdf": "latest" // does not work on Apple Silicon (M1, M2)
 	},
 	// Configure tool-specific properties.
 	"customizations": {

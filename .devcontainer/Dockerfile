@@ -15,4 +15,7 @@ RUN su vscode -c "${VCPKG_ROOT}/vcpkg install fmt gtest"
 
 # [Optional] Uncomment this section to install additional packages.
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-    && apt-get -y install --no-install-recommends ccache clangd clang-format clang-tidy
+    && apt-get -y install --no-install-recommends \
+        ccache clangd clang-format clang-tidy \
+        libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev \
+        libgl1-mesa-dev libglu1-mesa-dev mesa-common-dev
