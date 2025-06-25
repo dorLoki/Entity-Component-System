@@ -53,3 +53,13 @@ The current CI pipeline uses Clang for code formatting checks and Google Test fo
 Copyright © Microsoft Corporation All rights reserved.<br />
 Copyright © Luke Heydel All rights reserved.<br />
 Licensed under the MIT License. See LICENSE in the project root for license information.
+
+
+## Benchmark
+| Version | ECS Zeit (ms) | Faktor (OOP / ECS) |
+|---------|---------------|---------------------|
+| v1      | ~1000         | x1.45               |
+| v2      | ~1000         | x1.45               |
+| v3      | ~580          | x2.50               |
+| v4      | ~580          | x2.50               |
+| v5      | ~480          | x3.00               |
