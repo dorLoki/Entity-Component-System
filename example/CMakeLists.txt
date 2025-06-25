@@ -42,13 +42,21 @@ set(IMGUI_SRC
 find_package(OpenGL REQUIRED)
 
 # find all source files (only hpp and cpp)
-file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "*.cpp" "*.hpp")
+#file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "*.cpp" "*.hpp")
 
-add_executable(${EXEC_NAME} ${SOURCES} ${IMGUI_SRC})
+add_executable(${EXEC_NAME}_ecs "ecs/main.cpp" ${IMGUI_SRC})
+add_executable(${EXEC_NAME}_oop "oop/main.cpp" ${IMGUI_SRC})
 
-target_include_directories(${EXEC_NAME} PRIVATE
+target_include_directories(${EXEC_NAME}_ecs PRIVATE
     ${imgui_SOURCE_DIR}
     ${IMGUI_BACKEND_DIR}
 )
 
-target_link_libraries(${EXEC_NAME} PRIVATE glfw OpenGL::GL)
+target_link_libraries(${EXEC_NAME}_ecs PRIVATE glfw OpenGL::GL)
+
+target_include_directories(${EXEC_NAME}_oop PRIVATE
+    ${imgui_SOURCE_DIR}
+    ${IMGUI_BACKEND_DIR}
+)
+
+target_link_libraries(${EXEC_NAME}_oop PRIVATE glfw OpenGL::GL)

@@ -139,7 +139,7 @@ int main() {
     // fill space
     std::random_device rd;
     std::mt19937 rng(42);
-    for (size_t i = 0; i < 10000; i++) {
+    for (size_t i = 0; i < 100000; i++) {
         world.createEntity<Position, Circle, Color, Velocity>(
             Position{getRandom<float>(100.0f, 1000.0f), getRandom<float>(100.0f, 1000.0f)},
             Circle{10.0f},
@@ -205,17 +205,17 @@ int main() {
                 IM_COL32(color.r, color.g, color.b, color.a));
         });
 
-        ImGui::Begin("Entities");
-        world.forEachEntity([&](ecs::EntityId id, ecs::detail::EntityLocation location) {
-            // create tree node for entity
-            if (ImGui::TreeNode(("Entity " + std::to_string(id)).c_str())) {
-                auto signature = location.signature;
-                ShowComponentsUI<MyECS>(id, signature);
-                //  close tree node
-                ImGui::TreePop();
-            }
-        });
-        ImGui::End();
+        // ImGui::Begin("Entities");
+        // world.forEachEntity([&](ecs::EntityId id, ecs::detail::EntityLocation location) {
+        //     // create tree node for entity
+        //     if (ImGui::TreeNode(("Entity " + std::to_string(id)).c_str())) {
+        //         auto signature = location.signature;
+        //         ShowComponentsUI<MyECS>(id, signature);
+        //         //  close tree node
+        //         ImGui::TreePop();
+        //     }
+        // });
+        // ImGui::End();
 
         ImGui::Render();
 
