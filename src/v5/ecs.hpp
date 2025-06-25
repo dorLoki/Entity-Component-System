@@ -331,6 +331,8 @@ class World {
         entityLocationMap.erase(entityId);
     }
 
+    int getEntityCount() { return entityLocationMap.size(); }
+
    private:
     // All archetypes in the world
     std::vector<detail::Archetype> archetypes{};

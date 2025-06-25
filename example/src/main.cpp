@@ -4,10 +4,11 @@
 #include <imgui_impl_opengl3.h>
 
 #include <iostream>
+#include <random>
 #include <string>
+#include <type_traits>
 
 #include "../../src/v5/ecs.hpp"
-
 struct Position {
     float x, y;
 };
@@ -67,6 +68,23 @@ void ShowComponentsUI(ecs::EntityId id, std::size_t signature) {
     }(std::make_index_sequence<std::tuple_size_v<ComponentList>>{});
 }
 
+template <typename T>
+T getRandom(T min, T max) {
+    static std::mt19937 rng(std::random_device{}());
+
+    if constexpr (std::is_floating_point_v<T>) {
+        std::uniform_real_distribution<T> dist(min, max);
+        return dist(rng);
+    } else if constexpr (std::is_integral_v<T>) {
+        using DistType = std::conditional_t<(sizeof(T) <= sizeof(int)), int, T>;
+        std::uniform_int_distribution<DistType> dist(static_cast<DistType>(min),
+                                                     static_cast<DistType>(max));
+        return static_cast<T>(dist(rng));
+    } else {
+        static_assert(std::is_arithmetic_v<T>, "getRandom: unsupported type");
+    }
+}
+
 int main() {
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW\n";
@@ -87,7 +105,7 @@ int main() {
     }
 
     glfwMakeContextCurrent(window);
-    glfwSwapInterval(1);  // VSync
+    glfwSwapInterval(0);  // VSync
 
     // ImGui Setup
     IMGUI_CHECKVERSION();
@@ -118,6 +136,18 @@ int main() {
         Position{300.0f, 300.0f}, Rectangle{10.0f, 20.0f}, Color{0, 0, 255, 255},
         Velocity{70.0f, -20.0f});
 
+    // fill space
+    std::random_device rd;
+    std::mt19937 rng(42);
+    for (size_t i = 0; i < 10000; i++) {
+        world.createEntity<Position, Circle, Color, Velocity>(
+            Position{getRandom<float>(100.0f, 1000.0f), getRandom<float>(100.0f, 1000.0f)},
+            Circle{10.0f},
+            Color{getRandom<unsigned char>(0, 255), getRandom<unsigned char>(0, 255),
+                  getRandom<unsigned char>(0, 255), 255},
+            Velocity{getRandom<float>(-100.0f, +100.0f), getRandom<float>(-100.0f, +100.0f)});
+    }
+
     while (!glfwWindowShouldClose(window)) {
         double currentTime = glfwGetTime();
         deltaTime = float(currentTime - lastTime);
@@ -128,17 +158,37 @@ int main() {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-
+        int display_w, display_h;
+        glfwGetFramebufferSize(window, &display_w, &display_h);
         // Beispiel-GUI
         ImGui::Begin("Demo");
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
                     1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+        ImGui::Text("entities: %i", world.getEntityCount());
         ImGui::End();
 
         // update movement
-        world.forEach<Position, Velocity>([&deltaTime](Position& pos, Velocity& vel) {
+        world.forEach<Position, Velocity>([&](Position& pos, Velocity& vel) {
             pos.x += vel.dx * deltaTime;
             pos.y += vel.dy * deltaTime;
+
+            // borders
+            if (pos.x < 0) {
+                pos.x = 0;
+                vel.dx = -vel.dx;
+            }
+            if (pos.x > display_w) {
+                pos.x = display_w;
+                vel.dx = -vel.dx;
+            }
+            if (pos.y < 0) {
+                pos.y = 0;
+                vel.dy = -vel.dy;
+            }
+            if (pos.y > display_h) {
+                pos.y = display_h;
+                vel.dy = -vel.dy;
+            }
         });
 
         // draw circles
@@ -169,8 +219,6 @@ int main() {
 
         ImGui::Render();
 
-        int display_w, display_h;
-        glfwGetFramebufferSize(window, &display_w, &display_h);
         glViewport(0, 0, display_w, display_h);
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
