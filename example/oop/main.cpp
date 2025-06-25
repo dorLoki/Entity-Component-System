@@ -3,6 +3,7 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 
+#include <chrono>
 #include <iostream>
 #include <random>
 #include <string>
@@ -170,16 +171,22 @@ int main() {
         ImGui::NewFrame();
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
+
+        auto t0 = std::chrono::steady_clock::now();
+        for (auto entity : world) {
+            entity->move(deltaTime, display_w, display_h);
+        }
+
+        auto t1 = std::chrono::steady_clock::now();
+        auto movementTime = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0).count();
+
         // Beispiel-GUI
         ImGui::Begin("Demo");
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
                     1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+        ImGui::Text("Movement average %lo µs/frame", movementTime, ImGui::GetIO().Framerate);
         ImGui::Text("entities: %i", world.size());
         ImGui::End();
-
-        for (auto entity : world) {
-            entity->move(deltaTime, display_w, display_h);
-        }
 
         for (auto entity : world) {
             entity->draw();
